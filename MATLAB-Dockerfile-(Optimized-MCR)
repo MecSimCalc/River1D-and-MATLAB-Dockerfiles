@@ -30,6 +30,7 @@ ENV LAMBDA_TASK_ROOT=/var/task
 ENV LAMBDA_RUNTIME_DIR=/var/runtime
 
 # Install MCR
+# inputFile.txt is in this repository
 COPY inputFile.txt ${LAMBDA_TASK_ROOT}/
 RUN mkdir /mcr-install && \
     mkdir /opt/mcr && \
