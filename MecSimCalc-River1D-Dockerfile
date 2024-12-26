@@ -1,0 +1,24 @@
+# MecSimCalc River1D app’s Dockerfile content after line 10.
+
+# Previous base image
+FROM --platform=Linux/x86_64 653199784281.dkr.ecr.us-east-1.amazonaws.com/python:3.8 AS buildingpython
+
+
+# Copy environment variables from old base image into text file
+RUN printenv > /env_vars.txt
+
+
+# Final base image, Docker image uploaded to Github Packages
+FROM ghcr.io/{Github_username}/{package_name}:latest
+
+
+# COPY environment variable text file into final base image
+COPY --from=buildingpython /env_vars.txt /env_vars.txt
+
+
+# Set environment variables
+RUN set -o allexport; source /env_vars.txt; set +o allexport
+
+
+# Remove the text file
+RUN rm /env_vars.txt
