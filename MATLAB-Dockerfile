@@ -40,17 +40,21 @@ RUN mkdir /mcr-install && \
     cd / && \
     rm -rf mcr-install  
 
-# Copy files and folder from host machine to Docker image, convert Windows files to become compatible with Linux, and allow executables to be executable.
+# COPY necessary files (standalone application and sh file)
 COPY run_addTwoNumbers.sh ${LAMBDA_TASK_ROOT}/
 COPY addTwoNumbers ${LAMBDA_TASK_ROOT}/
-COPY app.py ${LAMBDA_TASK_ROOT}/ 
+COPY app.py ${LAMBDA_TASK_ROOT}/
 COPY lambda-entrypoint.sh /
 COPY download_and_run.py ${LAMBDA_TASK_ROOT}/
 
+# Convert files from Windows format to Linux format
 RUN dos2unix /lambda-entrypoint.sh
 RUN dos2unix ${LAMBDA_TASK_ROOT}/run_addTwoNumbers.sh
+
+# Provide necessary permissions
 RUN sudo chmod +x ${LAMBDA_TASK_ROOT}/run_addTwoNumbers.sh
 RUN sudo chmod +x ${LAMBDA_TASK_ROOT}/addTwoNumbers
+RUN sudo chmod +x /lambda-entrypoint.sh
 
 # Create /var directory and subdirectories and copy the contents of var
 RUN mkdir -p /var/adm \
