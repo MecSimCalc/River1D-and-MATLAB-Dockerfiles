@@ -1,0 +1,5 @@
+mode=silent
+destinationFolder=/opt/mcr
+agreeToLicense=yes
+product.MATLAB Runtime - Core
+product.MATLAB Runtime - Numerics
