@@ -1,1 +1,104 @@
+FROM ubuntu:20.04
 
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package lists and install required packages
+RUN apt-get update && \
+    apt-get install -y wget software-properties-common gnupg2 winbind curl dos2unix xvfb wget sudo unzip libgconf-2-4 libxt6
+
+# Install Python 3.8 and necessary tools
+RUN apt-get update && \
+    apt-get install -y python3.8 python3.8-venv python3.8-dev && \
+    apt-get install -y python3-pip && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+
+# Install AWS Lambda Runtime Interface Client (awslambdaric)
+RUN pip3 install awslambdaric
+
+# RUN Download custom AWS Lambda runtime interface emulator from Github
+RUN curl -Lo /usr/local/bin/aws-lambda-rie https://github.com/MecSimCalc/aws-lambda-runtime-interface-emulator/raw/msc-v1.13/bin/aws-lambda-rie && \
+    chmod +x /usr/local/bin/aws-lambda-rie 
+
+# Cleanup unnecessary files
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set LAMBDA_TASK_ROOT environment variable
+ENV LAMBDA_TASK_ROOT=/var/task
+
+# Set LAMBDA_RUNTIME_DIR environment variable
+ENV LAMBDA_RUNTIME_DIR=/var/runtime
+
+# Install MCR
+COPY inputFile.txt ${LAMBDA_TASK_ROOT}/
+RUN mkdir /mcr-install && \
+    mkdir /opt/mcr && \
+    cd /mcr-install && \
+    wget --no-check-certificate -q https://ssd.mathworks.com/supportfiles/downloads/R2024a/Release/4/deployment_files/installer/complete/glnxa64/MATLAB_Runtime_R2024a_Update_4_glnxa64.zip && \
+    unzip -q MATLAB_Runtime_R2024a_Update_4_glnxa64.zip && \
+    rm -f MATLAB_Runtime_R2024a_Update_4_glnxa64.zip && \
+    ./install -inputFile ${LAMBDA_TASK_ROOT}/inputFile.txt && \
+    rm -rf /mcr-install
+
+# COPY necessary files (standalone application and sh file)
+COPY run_addTwoNumbers.sh ${LAMBDA_TASK_ROOT}/
+COPY addTwoNumbers ${LAMBDA_TASK_ROOT}/
+COPY app.py ${LAMBDA_TASK_ROOT}/
+COPY lambda-entrypoint.sh /
+COPY download_and_run.py ${LAMBDA_TASK_ROOT}/
+
+# Convert files from Windows format to Linux format
+RUN dos2unix /lambda-entrypoint.sh
+RUN dos2unix ${LAMBDA_TASK_ROOT}/run_addTwoNumbers.sh
+
+# Provide necessary permissions
+RUN sudo chmod +x ${LAMBDA_TASK_ROOT}/run_addTwoNumbers.sh
+RUN sudo chmod +x ${LAMBDA_TASK_ROOT}/addTwoNumbers
+RUN sudo chmod +x /lambda-entrypoint.sh
+
+# Create /var directory and subdirectories and copy the contents of var
+RUN mkdir -p /var/adm \
+    && mkdir -p /var/cache \
+    && mkdir -p /var/db \
+    && mkdir -p /var/empty \
+    && mkdir -p /var/games \
+    && mkdir -p /var/gopher \
+    && mkdir -p /var/kerberos \
+    && mkdir -p /var/lang \
+    && mkdir -p /var/lib \
+    && mkdir -p /var/local \
+    && mkdir -p /var/log \
+    && mkdir -p /var/nis \
+    && mkdir -p /var/opt \
+    && mkdir -p /var/preserve \
+    && mkdir -p /var/rapid \
+    && mkdir -p /var/runtime \
+    && mkdir -p /var/spool \
+    && mkdir -p /var/task \
+    && mkdir -p /var/telemetry \
+    && mkdir -p /var/tmp \
+    && mkdir -p /var/tracer \
+    && mkdir -p /var/yp
+
+COPY var/runtime/* /var/runtime/
+COPY var/lang/ /var/lang/
+COPY var/* /var/
+
+RUN sudo chmod +x /var/runtime/bootstrap
+
+# Set the entrypoint to the script
+ENTRYPOINT ["/lambda-entrypoint.sh"]
+
+# Pass the handler function as an argument
+CMD ["app.handler"]
+
+# WORKDIR as /tmp
+WORKDIR /tmp
+
+# Environment variables set to the temporary directory
+ENV MPLCONFIGDIR=/tmp
+ENV TMPDIR=/tmp
+
+# - API_ACCESS_KEY is the SECRET key used to access the Mecsimcalc private API
+ARG API_ACCESS_KEY
+ENV API_ACCESS_KEY=$API_ACCESS_KEY
