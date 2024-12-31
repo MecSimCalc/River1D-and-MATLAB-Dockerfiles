@@ -22,14 +22,18 @@ def handler(event, context):
     # (0) Run app code in a clean environment
     with NewEnv():
         # (1) Fetch app code
-        inputs = (
-            event["inputs"]
+        inputs, url, headers = (
+            event["inputs"],
+            event["url"],
+            event.get("headers", {"Authorization": f"Token {api_key}"}),
         )
 
-        with open('/var/task/download_and_run.py', 'r') as file:
-            code = file.read()
+        response = http.request("GET", url, headers=headers, timeout=60)
+        code = response.data.decode("utf-8")
+        assert response.status == 200, f"Failed to fetch app code: {str(code)}\n"
+
         # (2) Execute app code
-        g = {}
+        g = {}  # globals without context
         exec(code, g)
 
         # (3) Run main(user_inputs) if defined
@@ -38,6 +42,7 @@ def handler(event, context):
 
         # (4) Return outputs and parse to json
         return {"statusCode": 200, "body": to_json(outputs)}
+
 
 
 class NewEnv:
