@@ -68,7 +68,6 @@ ENV LAMBDA_RUNTIME_DIR=/var/runtime
 ### Copy files and folder from host machine to Docker image, and turn lambda-entrypoint.sh into an executable.
 # COPY Files from local build folder
 COPY Project1.exe ${LAMBDA_TASK_ROOT}/
-COPY download_and_run.py ${LAMBDA_TASK_ROOT}/
 COPY app.py ${LAMBDA_TASK_ROOT}/
 COPY lambda-entrypoint.sh /
 
