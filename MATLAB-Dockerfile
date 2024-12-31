@@ -45,7 +45,6 @@ COPY run_addTwoNumbers.sh ${LAMBDA_TASK_ROOT}/
 COPY addTwoNumbers ${LAMBDA_TASK_ROOT}/
 COPY app.py ${LAMBDA_TASK_ROOT}/
 COPY lambda-entrypoint.sh /
-COPY download_and_run.py ${LAMBDA_TASK_ROOT}/
 
 # Convert files from Windows format to Linux format
 RUN dos2unix /lambda-entrypoint.sh
